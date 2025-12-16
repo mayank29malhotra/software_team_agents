@@ -19,14 +19,24 @@
 
 This project demonstrates an **autonomous AI-powered software development pipeline** that transforms high-level requirements into production-ready code, tests, and documentation. It showcases real-world enterprise patterns including requirements validation, code review, and iterative quality assurance.
 
+### Key Innovation: Cost-Optimized Multi-LLM Architecture
+
+**Problem:** LLM APIs are expensive at scale. Typical enterprise setups spend hundreds/month.
+
+**Solution:** This project uses a **strategic multi-provider approach** that costs **$0 (free tier)** while maintaining enterprise-grade quality:
+- Fast requirements analysis with Groq's ultra-fast Llama models
+- Advanced code generation with Google Gemini
+- Intelligent task-model matching for maximum efficiency
+
 ### Why This Project?
 
-| Traditional Approach | This AI Team |
-|---------------------|--------------|
-| Manual requirement analysis | Automated contradiction & edge case detection |
-| Single-pass development | Multi-agent validation at each stage |
-| Code review bottlenecks | Instant security & quality analysis |
-| Documentation as afterthought | Auto-generated docs from code |
+| Traditional Approach | This AI Team | Cost Difference |
+|---------------------|--------------|-----------------|
+| Manual requirement analysis | Automated contradiction & edge case detection | Hours of work → Minutes |
+| Single-pass development | Multi-agent validation at each stage | Error-prone → Quality-assured |
+| Code review bottlenecks | Instant security & quality analysis | Weeks → Minutes |
+| Documentation as afterthought | Auto-generated docs from code | Manual → Automated |
+| Enterprise LLM costs | Free-tier only architecture | $500+/month → $0 |
 
 ---
 
@@ -35,6 +45,12 @@ This project demonstrates an **autonomous AI-powered software development pipeli
 ### 🔄 End-to-End SDLC Automation
 - **Requirements → Design → Code → Review → Test → Documentation**
 - Complete software lifecycle managed by specialized AI agents
+
+### 💰 100% Free-Tier AI Infrastructure
+- **Zero cost** to run the entire project
+- Mix of Groq (fast, free inference) and Gemini (advanced reasoning)
+- Optimized model selection per task for maximum efficiency
+- Suitable for production-scale workflows
 
 ### 🧠 Intelligent Memory System
 - **Short-term Memory**: Context sharing between agents within a run
@@ -227,9 +243,80 @@ This project demonstrates an **autonomous AI-powered software development pipeli
 |------------|---------|
 | ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) | Core programming language |
 | ![CrewAI](https://img.shields.io/badge/CrewAI-FF6B6B?style=flat) | Multi-agent orchestration framework |
-| ![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=flat&logo=google&logoColor=white) | LLM backbone (gemini-2.5-flash-lite) |
+| ![Groq](https://img.shields.io/badge/Groq-FF8C42?style=flat) | Fast inference LLM backend |
+| ![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=flat&logo=google&logoColor=white) | Google's multimodal LLM |
 | ![Gradio](https://img.shields.io/badge/Gradio-FF7C00?style=flat) | Interactive UI generation |
 | ![pytest](https://img.shields.io/badge/pytest-0A9EDC?style=flat&logo=pytest&logoColor=white) | Testing framework |
+
+---
+
+## 🤖 Intelligent Model Selection Strategy
+
+This project optimizes cost and performance by strategically selecting different LLMs for different tasks. All models are available in the **free tier**, making this enterprise-grade architecture accessible to everyone.
+
+### Model Allocation
+
+| Agent | Model | Rationale | Cost Tier |
+|-------|-------|-----------|-----------|
+| **Requirements Analyst** | `groq/llama-3.1-8b-instant` | Fast analysis for structured requirements | ✅ Free |
+| **Engineering Lead** | `groq/llama-3.3-70b-versatile` | More capable for complex architecture design | ✅ Free |
+| **Backend Engineer** | `gemini/gemini-2.5-flash-lite` | Excellent code generation with small token footprint | ✅ Free |
+| **Frontend Engineer** | `gemini/gemini-2.5-flash-lite` | Optimized for UI generation | ✅ Free |
+| **Code Reviewer** | `groq/llama-3.3-70b-versatile` | Comprehensive analysis of code quality & security | ✅ Free |
+| **Test Engineer** | `gemini/gemini-2.5-flash-lite` | Strong at writing test cases | ✅ Free |
+| **Doc Writer** | `gemini/gemini-2.5-flash` | Best for documentation quality | ✅ Free |
+
+### Why This Strategy?
+
+<table>
+<tr>
+<td width="50%">
+
+#### 🚀 Cost Efficiency
+- Mix of Groq (ultra-fast) & Gemini (excellent quality)
+- Entirely free tier - no paid API required
+- Average cost per run: **$0 (free tier limits)**
+
+</td>
+<td width="50%">
+
+#### ⚡ Performance Optimization
+- Groq: 200+ tokens/sec (fast reasoning)
+- Gemini: Advanced reasoning (good for code)
+- Different models for different workloads
+- Best-in-class capability per dollar
+
+</td>
+</tr>
+</table>
+
+### Provider Strengths
+
+#### Groq (llama-3.1-8b-instant & llama-3.3-70b-versatile)
+| Strength | Usage |
+|----------|-------|
+| ⚡ **Ultra-fast inference** | Perfect for requirements analysis & quick reviews |
+| 💰 **Free tier** | Unlimited requests within rate limits |
+| 🎯 **Open-source models** | Transparent, reproducible results |
+
+**Best for:** Analysis, structured output, code review logic
+
+#### Google Gemini (gemini-2.5-flash-lite & gemini-2.5-flash)
+| Strength | Usage |
+|----------|-------|
+| 📝 **Excellent at code generation** | Backend implementation, tests |
+| 🧠 **Multimodal capabilities** | Understands complex architectures |
+| ✅ **Reliable structured output** | API docs, documentation |
+| 💰 **Competitive free tier** | 2M tokens/month free |
+
+**Best for:** Code generation, documentation, creative problem-solving
+
+### Free Tier Limits
+
+| Provider | Free Limit | Your Usage |
+|----------|-----------|------------|
+| **Groq** | 30 requests/minute | ✅ Compatible |
+| **Google Gemini** | 2M tokens/month | ✅ Well within limits |
 
 ---
 
@@ -260,10 +347,31 @@ pip install -e .
 ```
 
 ### Step 3: Configure Environment
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory with your free-tier API keys:
+
 ```env
+# Google Gemini API Key (Free tier: 2M tokens/month)
+# Get it from: https://ai.google.dev/
 GOOGLE_API_KEY=your_gemini_api_key_here
+
+# Groq API Key (Free tier: 30 requests/minute)
+# Get it from: https://console.groq.com/
+GROQ_API_KEY=your_groq_api_key_here
 ```
+
+#### How to Get Free API Keys
+
+**Google Gemini:**
+1. Visit [https://ai.google.dev/](https://ai.google.dev/)
+2. Click "Get API Key"
+3. Create a new project or select existing
+4. Copy the generated API key
+
+**Groq:**
+1. Visit [https://console.groq.com/](https://console.groq.com/)
+2. Sign up for free account
+3. Create an API key
+4. Copy the key to `.env`
 
 ---
 
