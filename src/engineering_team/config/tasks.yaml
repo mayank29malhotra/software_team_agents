@@ -1,12 +1,41 @@
+requirements_analysis_task:
+  description: >
+    Analyze and validate the following raw requirements before development begins:
+    {requirements}
+    
+    Your analysis must include:
+    1. **Requirement Validation**: Check each requirement for clarity, testability, and feasibility
+    2. **Contradiction Detection**: Identify any conflicting or contradictory statements
+    3. **Edge Case Analysis**: List all edge cases and boundary conditions that need handling
+    4. **Complexity Assessment**: Rate complexity (Low/Medium/High) and identify technical risks
+    5. **Missing Requirements**: Identify gaps or implicit requirements not explicitly stated
+    6. **Acceptance Criteria**: Define clear, testable acceptance criteria for each requirement
+    7. **Prioritization**: Suggest MoSCoW prioritization (Must/Should/Could/Won't)
+    
+    The module will be named {module_name} with main class {class_name}
+  expected_output: >
+    A structured Requirements Specification Document in markdown format containing:
+    - Executive Summary
+    - Validated Requirements (numbered, with acceptance criteria)
+    - Risk Register (contradictions, complexity risks, edge cases)
+    - Recommended Clarifications (questions for stakeholders)
+    - Dependency Map
+    This document will guide the engineering lead's design decisions.
+  agent: requirements_analyst
+  output_file: output/{module_name}_requirements.md
+
 design_task:
   description: >
-    Take the high level requirements described here and prepare a detailed design for the engineer;
+    Based on the validated requirements specification, prepare a detailed design for the engineer;
     everything should be in 1 python module, but outline the classes and methods in the module.
-    Here are the requirements: {requirements}
+    Here are the original requirements: {requirements}
     IMPORTANT: Only output the design in markdown format, laying out in detail the classes and functions in the module, describing the functionality.
+    Address all edge cases and risks identified in the requirements analysis.
   expected_output: >
     A detailed design for the engineer, identifying the classes and functions in the module.
   agent: engineering_lead
+  context:
+    - requirements_analysis_task
   output_file: output/{module_name}_design.md
 
 code_task:
@@ -37,14 +66,149 @@ frontend_task:
     - code_task
   output_file: output/app.py
 
+code_review_task:
+  description: >
+    Perform a comprehensive code review of the implemented backend module ({module_name}) and frontend (app.py).
+    
+    Review the code against:
+    1. The original requirements: {requirements}
+    2. The validated requirements specification
+    3. The technical design document
+    
+    Your review must cover:
+    
+    **Security Analysis:**
+    - Input validation vulnerabilities
+    - Data sanitization issues
+    - Authentication/authorization gaps (if applicable)
+    - Sensitive data exposure risks
+    
+    **Error Handling:**
+    - Unhandled exceptions
+    - Missing edge case handling
+    - Error message quality (informative but not leaking internals)
+    
+    **Code Quality:**
+    - Cyclomatic complexity concerns
+    - Code duplication (DRY violations)
+    - Naming clarity and consistency
+    - Single Responsibility Principle adherence
+    
+    **Performance:**
+    - Inefficient algorithms or data structures
+    - Potential memory issues
+    - Unnecessary computations
+    
+    **Requirements Compliance:**
+    - Verify each requirement is actually implemented
+    - Flag any requirement gaps or deviations
+    
+    **Testing Recommendations:**
+    - Specific areas that need focused unit tests
+    - Edge cases that must be tested
+    - Security scenarios to verify
+  expected_output: >
+    A structured Code Review Report in markdown format with:
+    
+    1. **Executive Summary**: Overall code quality assessment (Pass/Pass with Comments/Needs Revision)
+    
+    2. **Findings Table**:
+       | ID | Severity | Category | File | Line/Method | Issue | Recommendation |
+       Each finding rated: Critical / High / Medium / Low / Info
+    
+    3. **Security Checklist**: Pass/Fail for common security items
+    
+    4. **Requirements Traceability**: Matrix showing each requirement and its implementation status
+    
+    5. **Testing Recommendations**: Prioritized list of test cases for the Test Engineer
+    
+    6. **Positive Observations**: Good practices observed in the code
+    
+    This report will guide the Test Engineer's testing strategy.
+  agent: code_reviewer
+  context:
+    - requirements_analysis_task
+    - design_task
+    - code_task
+    - frontend_task
+  output_file: output/{module_name}_code_review.md
+
 test_task:
   description: >
-    Write unit tests for the given backend module {module_name} and create a test_{module_name} in the same directory as the backend module.
+    Write comprehensive unit tests for the backend module {module_name}.
+    
+    Use the Code Review findings to prioritize your testing:
+    1. Focus on areas flagged as Critical or High severity
+    2. Cover edge cases identified in requirements analysis
+    3. Test security scenarios mentioned in the review
+    4. Verify error handling for all identified gaps
+    
+    Your tests should:
+    - Use pytest framework
+    - Follow Arrange-Act-Assert pattern
+    - Include positive and negative test cases
+    - Test boundary conditions
+    - Mock external dependencies appropriately
   expected_output: >
-    A test_{module_name} module that tests the given backend module.
+    A test_{module_name} module containing:
+    - Unit tests covering all public methods
+    - Edge case tests from requirements analysis
+    - Security-focused tests from code review recommendations
+    - Clear test names describing what is being tested
     IMPORTANT: Output ONLY the raw Python code without any markdown formatting, code block delimiters, or backticks.
     The output should be valid Python code that can be directly saved to a file and executed.
   agent: test_engineer
   context:
     - code_task
+    - code_review_task
   output_file: output/test_{module_name}
+
+documentation_task:
+  description: >
+    Generate comprehensive project documentation based on:
+    - Requirements: {requirements}
+    - Module name: {module_name}
+    - Class name: {class_name}
+    
+    Create the following documentation:
+    
+    1. **README.md** containing:
+       - Project title and badges
+       - Overview/description
+       - Features list
+       - Installation instructions
+       - Quick start guide
+       - Usage examples with code snippets
+       - API reference summary
+       - Testing instructions
+       - Contributing guidelines placeholder
+       - License placeholder
+    
+    2. **API_REFERENCE.md** containing:
+       - Module overview
+       - Class documentation with all methods
+       - Parameters and return types
+       - Usage examples for each method
+       - Error handling documentation
+    
+    3. **QUICKSTART.md** containing:
+       - 5-minute getting started guide
+       - Common use cases with code examples
+       - Troubleshooting tips
+    
+    Review the actual code implementation and design to ensure accuracy.
+  expected_output: >
+    Three markdown files:
+    1. A professional README.md suitable for GitHub
+    2. A detailed API_REFERENCE.md with full method documentation
+    3. A practical QUICKSTART.md with working examples
+    
+    Output format: Clearly separate each file with headers like "--- FILE: README.md ---"
+  agent: doc_writer
+  context:
+    - requirements_analysis_task
+    - design_task
+    - code_task
+    - code_review_task
+    - test_task
+  output_file: output/PROJECT_DOCS.md
