@@ -1,197 +1,104 @@
 import gradio as gr
-import datetime
+from accounts import Account, get_share_price
 
-# Assuming accounts.py is in the same directory
-from accounts import Account, TransactionType, get_share_price
+account = None
 
-# --- Global state for simplicity (single user simulation) ---
-# In a real app, you'd manage users and accounts more robustly.
-user_account = None
+def create_account(initial_balance):
+    global account
+    account = Account(initial_balance)
+    return f"Account created with an initial balance of ${initial_balance}"
 
-def initialize_account(account_id: str, initial_deposit: float):
-    """Initializes or resets the global user account."""
-    global user_account
+def deposit(amount):
+    if account is None:
+        return "Account does not exist. Please create an account first."
+    account.deposit(amount)
+    return f"Deposited ${amount}. New balance: ${account.balance}"
+
+def withdraw(amount):
+    if account is None:
+        return "Account does not exist. Please create an account first."
     try:
-        user_account = Account(account_id, initial_deposit)
-        return f"Account '{account_id}' created with initial deposit of ${initial_deposit:.2f}.", user_account.get_account_summary()
-    except ValueError as e:
-        return f"Error creating account: {e}", None
-
-def get_account_instance():
-    """Helper to ensure account is initialized before operations."""
-    if user_account is None:
-        raise gr.Error("Account not initialized. Please create an account first.")
-    return user_account
-
-# --- Gradio Interface Functions ---
-
-def handle_create_account(account_id: str, initial_deposit: float):
-    message, summary = initialize_account(account_id, initial_deposit)
-    if summary:
-        return message, str(summary).replace('{', '').replace('}', '').replace("'", "").replace(':', ': ')
-    else:
-        return message, "Account not created."
-
-def handle_deposit(amount: float):
-    try:
-        account = get_account_instance()
-        account.deposit(amount)
-        return f"Deposit of ${amount:.2f} successful. Current balance: ${account.balance:.2f}", str(account.get_account_summary()).replace('{', '').replace('}', '').replace("'", "").replace(':', ': ')
-    except ValueError as e:
-        raise gr.Error(f"Deposit failed: {e}")
-    except gr.Error as e:
-        raise e
-
-def handle_withdraw(amount: float):
-    try:
-        account = get_account_instance()
         account.withdraw(amount)
-        return f"Withdrawal of ${amount:.2f} successful. Current balance: ${account.balance:.2f}", str(account.get_account_summary()).replace('{', '').replace('}', '').replace("'", "").replace(':', ': ')
+        return f"Withdrew ${amount}. New balance: ${account.balance}"
     except ValueError as e:
-        raise gr.Error(f"Withdrawal failed: {e}")
-    except gr.Error as e:
-        raise e
+        return str(e)
 
-def handle_buy_shares(symbol: str, quantity: int):
+def buy_shares(symbol, quantity):
+    if account is None:
+        return "Account does not exist. Please create an account first."
     try:
-        account = get_account_instance()
         account.buy_shares(symbol, quantity)
-        current_price = get_share_price(symbol)
-        cost = current_price * quantity
-        return f"Bought {quantity} shares of {symbol} @ ${current_price:.2f} each. Total cost: ${cost:.2f}. New balance: ${account.balance:.2f}", str(account.get_account_summary()).replace('{', '').replace('}', '').replace("'", "").replace(':', ': ')
+        return f"Bought {quantity} shares of {symbol}. New holdings: {account.get_holdings()}"
     except ValueError as e:
-        raise gr.Error(f"Buy shares failed: {e}")
-    except gr.Error as e:
-        raise e
+        return str(e)
 
-def handle_sell_shares(symbol: str, quantity: int):
+def sell_shares(symbol, quantity):
+    if account is None:
+        return "Account does not exist. Please create an account first."
     try:
-        account = get_account_instance()
         account.sell_shares(symbol, quantity)
-        current_price = get_share_price(symbol)
-        revenue = current_price * quantity
-        return f"Sold {quantity} shares of {symbol} @ ${current_price:.2f} each. Total revenue: ${revenue:.2f}. New balance: ${account.balance:.2f}", str(account.get_account_summary()).replace('{', '').replace('}', '').replace("'", "").replace(':', ': ')
+        return f"Sold {quantity} shares of {symbol}. New holdings: {account.get_holdings()}"
     except ValueError as e:
-        raise gr.Error(f"Sell shares failed: {e}")
-    except gr.Error as e:
-        raise e
+        return str(e)
 
-def format_transactions(transactions):
-    """Formats the transaction list for display."""
-    if not transactions:
-        return "No transactions yet."
-    formatted = []
-    for tx in transactions:
-        details = f"{tx['timestamp'].strftime('%Y-%m-%d %H:%M:%S')} | {tx['type']} | "
-        if tx.get('symbol'):
-            details += f"Symbol: {tx['symbol']}, Qty: {tx['quantity']}, "
-        if tx.get('amount') is not None:
-            details += f"Amount: ${tx['amount']:.2f}, "
-        details += f"Balance After: ${tx['balance_after']:.2f} | Desc: {tx['description']}"
-        formatted.append(details)
-    return "\n".join(formatted)
+def report_holdings():
+    if account is None:
+        return "Account does not exist. Please create an account first."
+    return str(account.get_holdings())
 
-def update_account_display():
-    """Updates all relevant display components."""
-    try:
-        account = get_account_instance()
-        summary = account.get_account_summary()
-        holdings_str = str(account.get_holdings()).replace('{', '').replace('}', '').replace("'", "").replace(':', ': ')
-        transactions_str = format_transactions(account.get_transactions())
-        profit_loss_str = f"Total Profit/Loss: ${account.get_profit_loss():.2f}"
-        return (str(summary).replace('{', '').replace('}', '').replace("'", "").replace(':', ': '),
-                holdings_str,
-                transactions_str,
-                profit_loss_str)
-    except gr.Error as e:
-        # Return empty or default values if account not initialized
-        return "Account not initialized.", "{}", "No transactions yet.", "Total Profit/Loss: $0.00"
+def report_profit_loss():
+    if account is None:
+        return "Account does not exist. Please create an account first."
+    return f"Profit/Loss: ${account.get_profit_loss()}"
 
-# --- Gradio UI Definition ---
+def list_transactions():
+    if account is None:
+        return "Account does not exist. Please create an account first."
+    return str(account.get_transactions())
 
-with gr.Blocks() as app:
-    gr.Markdown("# Trading Simulation Account Manager")
+with gr.Blocks() as demo:
+    gr.Markdown("## Trading Simulation Platform")
 
     with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("## Account Management")
-            account_id_input = gr.Textbox(label="Account ID", placeholder="Enter a unique ID")
-            initial_deposit_input = gr.Number(label="Initial Deposit ($)", value=0.0, minimum=0)
-            create_account_btn = gr.Button("Create/Reset Account")
+        create_balance_input = gr.Number(label="Initial Balance", value=1000, interactive=True)
+        create_button = gr.Button("Create Account")
 
-            gr.Markdown("---")
-            gr.Markdown("## Fund Operations")
-            deposit_amount_input = gr.Number(label="Amount to Deposit ($)", minimum=0.01)
-            deposit_btn = gr.Button("Deposit")
-            withdraw_amount_input = gr.Number(label="Amount to Withdraw ($)", minimum=0.01)
-            withdraw_btn = gr.Button("Withdraw")
+    create_output = gr.Textbox(label="Output", interactive=False)
+    create_button.click(create_account, inputs=create_balance_input, outputs=create_output)
 
-            gr.Markdown("---")
-            gr.Markdown("## Share Trading")
-            share_symbol_input = gr.Textbox(label="Share Symbol (e.g., AAPL, TSLA, GOOGL)", placeholder="Enter symbol")
-            share_quantity_input = gr.Number(label="Quantity", value=1, minimum=1, precision=0) # Integer quantity
-            buy_shares_btn = gr.Button("Buy Shares")
-            sell_shares_btn = gr.Button("Sell Shares")
+    deposit_input = gr.Number(label="Deposit Amount", interactive=True)
+    deposit_button = gr.Button("Deposit")
+    deposit_output = gr.Textbox(label="Output", interactive=False)
+    deposit_button.click(deposit, inputs=deposit_input, outputs=deposit_output)
 
-        with gr.Column(scale=2):
-            gr.Markdown("## Account Dashboard")
-            account_summary_output = gr.Textbox(label="Account Summary", lines=7, interactive=False)
-            holdings_output = gr.Textbox(label="Current Holdings", lines=3, interactive=False)
-            profit_loss_output = gr.Textbox(label="Profit/Loss", lines=1, interactive=False)
-            transaction_history_output = gr.Textbox(label="Transaction History", lines=10, interactive=False)
+    withdraw_input = gr.Number(label="Withdraw Amount", interactive=True)
+    withdraw_button = gr.Button("Withdraw")
+    withdraw_output = gr.Textbox(label="Output", interactive=False)
+    withdraw_button.click(withdraw, inputs=withdraw_input, outputs=withdraw_output)
 
-    # --- Event Listeners ---
-    create_account_btn.click(
-        handle_create_account,
-        inputs=[account_id_input, initial_deposit_input],
-        outputs=[app.get_state(user_account), account_summary_output] # Use app.get_state to update the global user_account state if needed, though direct modification is done
-    )
-    # We need a way to trigger updates after other operations. A separate update button or dynamic updates are options.
-    # For simplicity, we'll update after each operation for now.
+    buy_symbol_input = gr.Textbox(label="Symbol to Buy")
+    buy_quantity_input = gr.Number(label="Quantity to Buy", interactive=True)
+    buy_button = gr.Button("Buy Shares")
+    buy_output = gr.Textbox(label="Output", interactive=False)
+    buy_button.click(buy_shares, inputs=[buy_symbol_input, buy_quantity_input], outputs=buy_output)
 
-    deposit_btn.click(
-        handle_deposit,
-        inputs=[deposit_amount_input],
-        outputs=[app.get_state(user_account), account_summary_output] # Re-evaluate state and summary
-    ).then(
-        update_account_display,
-        outputs=[account_summary_output, holdings_output, transaction_history_output, profit_loss_output]
-    )
+    sell_symbol_input = gr.Textbox(label="Symbol to Sell")
+    sell_quantity_input = gr.Number(label="Quantity to Sell", interactive=True)
+    sell_button = gr.Button("Sell Shares")
+    sell_output = gr.Textbox(label="Output", interactive=False)
+    sell_button.click(sell_shares, inputs=[sell_symbol_input, sell_quantity_input], outputs=sell_output)
 
-    withdraw_btn.click(
-        handle_withdraw,
-        inputs=[withdraw_amount_input],
-        outputs=[app.get_state(user_account), account_summary_output] # Re-evaluate state and summary
-    ).then(
-        update_account_display,
-        outputs=[account_summary_output, holdings_output, transaction_history_output, profit_loss_output]
-    )
+    holdings_button = gr.Button("Report Holdings")
+    holdings_output = gr.Textbox(label="Output", interactive=False)
+    holdings_button.click(report_holdings, outputs=holdings_output)
 
-    buy_shares_btn.click(
-        handle_buy_shares,
-        inputs=[share_symbol_input, share_quantity_input],
-        outputs=[app.get_state(user_account), account_summary_output] # Re-evaluate state and summary
-    ).then(
-        update_account_display,
-        outputs=[account_summary_output, holdings_output, transaction_history_output, profit_loss_output]
-    )
+    profit_loss_button = gr.Button("Report Profit/Loss")
+    profit_loss_output = gr.Textbox(label="Output", interactive=False)
+    profit_loss_button.click(report_profit_loss, outputs=profit_loss_output)
 
-    sell_shares_btn.click(
-        handle_sell_shares,
-        inputs=[share_symbol_input, share_quantity_input],
-        outputs=[app.get_state(user_account), account_summary_output] # Re-evaluate state and summary
-    ).then(
-        update_account_display,
-        outputs=[account_summary_output, holdings_output, transaction_history_output, profit_loss_output]
-    )
-
-    # Initial load of dashboard components (will show 'Account not initialized')
-    app.load(
-        update_account_display,
-        outputs=[account_summary_output, holdings_output, transaction_history_output, profit_loss_output]
-    )
+    transactions_button = gr.Button("List Transactions")
+    transactions_output = gr.Textbox(label="Output", interactive=False)
+    transactions_button.click(list_transactions, outputs=transactions_output)
 
 if __name__ == "__main__":
-    # To run this Gradio app, save it as app.py in the same directory as accounts.py
-    # and run `gradio app.py` from your terminal.
-    app.launch()
+    demo.launch()
